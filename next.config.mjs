@@ -10,7 +10,7 @@ const nextConfig = {
     ]
   },
   experimental: {
-    serverComponentsExternalPackages: ["mongoose", "cloudinary", "bcrypt", "formidable"]
+    serverComponentsExternalPackages: ["mongoose", "cloudinary", "formidable"]
   }
 };
 
