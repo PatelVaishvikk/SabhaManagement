@@ -36,6 +36,7 @@ interface DisplayPayload {
   settings: SettingsDoc;
   announcements: AnnouncementDoc[];
   liveState: LiveStateDoc;
+  serverTime?: number;
 }
 
 const passStorageKey = "assembly-manager-remote-pass";
@@ -60,6 +61,8 @@ export default function MobileRemotePage({ params }: { params: { planId: string 
   const [localSeconds, setLocalSeconds] = useState(0);
   const [expandBhajans, setExpandBhajans] = useState(false);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const localSecondsRef = useRef(localSeconds);
+  localSecondsRef.current = localSeconds;
 
   const liveState = payload?.liveState;
   const status = liveState?.playbackStatus ?? (liveState?.isPlaying ? "playing" : "stopped");
@@ -74,7 +77,7 @@ export default function MobileRemotePage({ params }: { params: { planId: string 
 
   // Projector online = seen within last 6 seconds
   const projectorOnline = liveState?.projectorLastSeenAt
-    ? Date.now() - new Date(liveState.projectorLastSeenAt).getTime() < 6000
+    ? (payload?.serverTime ?? Date.now()) - new Date(liveState.projectorLastSeenAt).getTime() < 6000
     : false;
 
   // Local tick for smooth progress bar
@@ -86,12 +89,15 @@ export default function MobileRemotePage({ params }: { params: { planId: string 
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [status]);
 
-  // Sync localSeconds with server
+  // Sync localSeconds with server (only if drift > 2s to prevent jitter)
   useEffect(() => {
     if (liveState?.playbackSeconds !== undefined) {
-      setLocalSeconds(Number(liveState.playbackSeconds));
+      const srv = Number(liveState.playbackSeconds);
+      if (Math.abs(srv - localSecondsRef.current) > 2 || status !== "playing") {
+        setLocalSeconds(srv);
+      }
     }
-  }, [liveState?.playbackSeconds, currentIndex]);
+  }, [liveState?.playbackSeconds, currentIndex, status]);
 
   const load = useCallback(() => {
     if (!unlocked) return;

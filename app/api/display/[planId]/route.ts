@@ -30,7 +30,7 @@ export async function GET(_: NextRequest, { params }: { params: { planId: string
 
     if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404 });
 
-    return NextResponse.json({ plan, settings, announcements, liveState });
+    return NextResponse.json({ plan, settings, announcements, liveState, serverTime: Date.now() });
   } catch (error) {
     return apiError(error, 500);
   }
